@@ -1,0 +1,66 @@
+# my nginx app
+# 域名访问service资源
+# nginx-dep为service.metadata.name default为service.metadata.namespace(默认)
+# curl server1.project-1.svc.cluster.local
+
+# -------------------- nginx Namespace ------------------- #
+# 命名空间请尽量提前创建 再次创建会有警告信息
+# Warning: kubectl apply should be used on resource created by either kubectl create --save-config or kubectl apply
+# namespace/project-1 configured
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-1
+  labels:
+    app: nginx
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+
+---
+# -------------------- nginx Deployment ------------------- #
+
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-dep
+  namespace: project-1
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:v2
+        imagePullPolicy: "IfNotPresent"
+        ports:
+        - containerPort: 80
+
+---
+# -------------------- nginx Service ------------------- #
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: server1
+  labels:
+    app: nginx
+  namespace: project-1
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 20002
+  selector:
+    app: nginx
